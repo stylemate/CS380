@@ -140,8 +140,15 @@ void draw_model()
 	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, VBID);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), BUFFER_OFFSET(0));
-	glm::mat4 Model = glm::mat4(1.0f);
-	glm::mat4 MVP = Projection * View * Model;
+
+	//glm::mat4 Model = glm::mat4(1.0f);
+	degree += 0.1f;
+	glm::mat4 Rotation = glm::rotate(degree, glm::vec3(0, 0, 1));
+	glm::mat4 Translation = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	glm::mat4 Scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.0f));
+	glm::mat4 RBT = Translation * Rotation;
+	glm::mat4 MVP = Projection * View * RBT * Scale;
+
 	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 	glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
 	glDrawArrays(GL_TRIANGLES, 0, (GLsizei)g_vertex_buffer_data.size()); //just to avoid warning message...
