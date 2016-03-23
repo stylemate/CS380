@@ -33,6 +33,7 @@ std::vector<glm::vec3> g_vertex_buffer_data;
 glm::mat4 Projection;
 glm::mat4 View;
 float degree = 0.0f;
+float position = 1.0f;
 
 //// TODO: Implement koch snowflake
 //void koch_line(glm::vec3 a, glm::vec3 b, int iter)
@@ -105,7 +106,7 @@ void koch_line(glm::vec3 a, glm::vec3 b, int iter)
 //	Trial 2: SUCCESS
 //	There are total 5 vertices that can be processed in koch_line method.
 //	It's important NOT to push the initial vertex and destination vertex into the buffer if you want to avoid overlapping vertices.
-//	Finally, it's important to check if the type of a variable is not altered through the end. 
+//	Finally, it's important to check the type of a variable so that it is not altered through out the end. 
 
 // TODO: Initialize model
 void init_model(void)
@@ -143,8 +144,9 @@ void draw_model()
 
 	//glm::mat4 Model = glm::mat4(1.0f);
 	degree += 0.1f;
+	position -= 0.0005f;
 	glm::mat4 Rotation = glm::rotate(degree, glm::vec3(0, 0, 1));
-	glm::mat4 Translation = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	glm::mat4 Translation = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, position, 0.0f));
 	glm::mat4 Scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.0f));
 	glm::mat4 RBT = Translation * Rotation;
 	glm::mat4 MVP = Projection * View * RBT * Scale;
@@ -152,6 +154,7 @@ void draw_model()
 	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 	glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
 	glDrawArrays(GL_TRIANGLES, 0, (GLsizei)g_vertex_buffer_data.size()); //just to avoid warning message...
+	glDrawArrays(GL_TRIANGLES, 0, (GLsizei)g_vertex_buffer_data.size());
 	glDisableVertexAttribArray(0);
 }
 
@@ -168,7 +171,7 @@ int main(int argc, char* argv[])
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
 	// TODO: GLFW create window and context
-	window = glfwCreateWindow(1024, 768, "Lab 1", NULL, NULL);
+	window = glfwCreateWindow(1024, 768, "ORMEEHYUNGKEUN CHA:20156400 Lab 1", NULL, NULL);
 	if (window == NULL)
 	{
 		return -1;
