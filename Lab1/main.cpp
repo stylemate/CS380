@@ -33,6 +33,7 @@ std::vector<glm::vec3> g_vertex_buffer_data;
 glm::mat4 Projection;
 glm::mat4 View;
 float degree = 0.0f;
+float initial = 1.0f;
 float position = 1.0f;
 
 //// TODO: Implement koch snowflake
@@ -143,8 +144,8 @@ void draw_model()
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), BUFFER_OFFSET(0));
 
 	//glm::mat4 Model = glm::mat4(1.0f);
-	degree += 0.1f;
-	position -= 0.0005f;
+	degree += 1.0f;
+	position -= 0.005f;
 	glm::mat4 Rotation = glm::rotate(degree, glm::vec3(0, 0, 1));
 	glm::mat4 Translation = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, position, 0.0f));
 	glm::mat4 Scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.0f));
@@ -154,8 +155,12 @@ void draw_model()
 	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 	glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
 	glDrawArrays(GL_TRIANGLES, 0, (GLsizei)g_vertex_buffer_data.size()); //just to avoid warning message...
-	glDrawArrays(GL_TRIANGLES, 0, (GLsizei)g_vertex_buffer_data.size());
 	glDisableVertexAttribArray(0);
+}
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+	glViewport(0, 0, width, height);
 }
 
 int main(int argc, char* argv[])
@@ -210,6 +215,8 @@ int main(int argc, char* argv[])
 	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 
 	// END
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
 	init_model();
 
 	// Step 2: Main event loop
