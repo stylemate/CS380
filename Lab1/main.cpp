@@ -32,9 +32,13 @@ std::vector<glm::vec3> g_vertex_buffer_data;
 
 glm::mat4 Projection;
 glm::mat4 View;
+
 float degree = 0.0f;
 float initial = 1.0f;
 float position = 1.0f;
+
+double before = 0.0;
+double after = 0.0;
 
 //// TODO: Implement koch snowflake
 //void koch_line(glm::vec3 a, glm::vec3 b, int iter)
@@ -169,7 +173,7 @@ int main(int argc, char* argv[])
 	if (!glfwInit())
 		return -1;
 
-	glfwWindowHint(GLFW_SAMPLES, 4);
+	glfwWindowHint(GLFW_SAMPLES, 16);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -223,7 +227,13 @@ int main(int argc, char* argv[])
 	do {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		before = glfwGetTime();
 		draw_model();
+		after = glfwGetTime();
+		while ((before - after) > (1.0 / 60.0))
+		{
+			after = glfwGetTime();
+		}
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
