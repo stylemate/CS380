@@ -181,7 +181,9 @@ static void keyboard_callback(GLFWwindow* window, int key, int scancode, int act
 			greenCubeRBT = greenCubeRBT * m;
 			break;
 		default:
-			break;		}	}
+			break;
+		}
+	}
 }
 
 
@@ -287,7 +289,8 @@ int main(void)
 
 		// TODO: Change Viewpoint by select_frame
 		eyeRBT = (select_frame == 0) ? skyRBT : (select_frame ==
-			1) ? redCubeRBT : greenCubeRBT;		// TODO END
+			1) ? redCubeRBT : greenCubeRBT;
+		// TODO END
 
 		// TODO: Draw Two Cube Models
 		redCube.draw();

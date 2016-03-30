@@ -29,16 +29,21 @@ GLuint VAID;
 GLuint VBID;
 
 std::vector<glm::vec3> g_vertex_buffer_data;
+std::vector<glm::mat4> snowflake;
+std::vector<float> iYposition;
+std::vector<float> iDegree;
 
 glm::mat4 Projection;
 glm::mat4 View;
 
-float degree = 0.0f;
-float initial = 1.0f;
-float position = 1.0f;
-
 double before = 0.0;
 double after = 0.0;
+
+double xpos, ypos; //cursor position
+float xsize = 1024.0f; //window size
+float ysize = 786.0f;
+
+int i; //for iteration
 
 //// TODO: Implement koch snowflake
 //void koch_line(glm::vec3 a, glm::vec3 b, int iter)
@@ -116,6 +121,7 @@ void koch_line(glm::vec3 a, glm::vec3 b, int iter)
 // TODO: Initialize model
 void init_model(void)
 {
+	snowflake = std::vector<glm::mat4>();
 	g_vertex_buffer_data = std::vector<glm::vec3>();
 	g_vertex_buffer_data.push_back(glm::vec3(-0.5f, -0.25f, 0.0f));
 	g_vertex_buffer_data.push_back(glm::vec3(0.0f, sqrt(0.75) - 0.25f, 0.0f));
@@ -141,30 +147,61 @@ void init_model(void)
 // TODO: Draw model
 void draw_model()
 {
-	glUseProgram(programID);
-	glBindVertexArray(VAID);
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, VBID);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), BUFFER_OFFSET(0));
+	for (i = 0; i < snowflake.size(); i++)
+	{
+		glUseProgram(programID);
+		glBindVertexArray(VAID);
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, VBID);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), BUFFER_OFFSET(0));
 
-	//glm::mat4 Model = glm::mat4(1.0f);
-	degree += 1.0f;
-	position -= 0.005f;
-	glm::mat4 Rotation = glm::rotate(degree, glm::vec3(0, 0, 1));
-	glm::mat4 Translation = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, position, 0.0f));
-	glm::mat4 Scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.0f));
-	glm::mat4 RBT = Translation * Rotation;
-	glm::mat4 MVP = Projection * View * RBT * Scale;
+		glm::mat4 Rotation = glm::rotate(iDegree[i], glm::vec3(0, 0, 1));
+		glm::mat4 Translation = snowflake[i] * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, iYposition[i], 0.0f));
+		glm::mat4 Scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 0.0f));
+		glm::mat4 RBT = Translation * Rotation;
+		glm::mat4 MVP = Projection * View * RBT * Scale;
+		iDegree[i] += 1.0f;
+		iYposition[i] -= 0.005f;
 
-	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
-	glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-	glDrawArrays(GL_TRIANGLES, 0, (GLsizei)g_vertex_buffer_data.size()); //just to avoid warning message...
-	glDisableVertexAttribArray(0);
+		GLuint MatrixID = glGetUniformLocation(programID, "MVP");
+		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)g_vertex_buffer_data.size()); //just to avoid warning message...
+		glDisableVertexAttribArray(0);
+	}
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
+	xsize = (float)width;
+	ysize = (float)height;
+	printf("width:%f height:%f\n", xsize, ysize);
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+	{
+		glfwGetCursorPos(window, &xpos, &ypos);
+
+		//clumsy conversion;
+		if (xpos >= xsize / 2)
+			xpos = (xpos / (xsize / 2)) - 1;
+		else if (xpos < xsize / 2)
+			xpos = (((((xsize / 2) - xpos) * 2) + xpos) / (xsize / 2) - 1) * -1;
+		
+		if (ypos >= ysize / 2)
+			ypos = ((ypos / (ysize / 2)) - 1) * -1;
+		else if (ypos < ysize / 2)
+			ypos = (((((ysize / 2) - ypos) * 2) + ypos) / (ysize / 2) - 1);
+
+		printf("X:%f Y:%f\n", xpos, ypos);
+
+		snowflake.push_back(glm::translate(glm::mat4(1.0f), glm::vec3((float)xpos, (float)ypos, 0.0f)));
+		iYposition.push_back((float)ypos);
+		iDegree.push_back(0.0f);
+		printf("inserted %zd\n", snowflake.size());
+	}
 }
 
 int main(int argc, char* argv[])
@@ -180,7 +217,7 @@ int main(int argc, char* argv[])
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
 	// TODO: GLFW create window and context
-	window = glfwCreateWindow(1024, 768, "ORMEEHYUNGKEUN CHA:20156400 Lab 1", NULL, NULL);
+	window = glfwCreateWindow((int)xsize, (int)ysize, "ORMEEHYUNGKEUN CHA:20156400 Lab 1", NULL, NULL);
 	if (window == NULL)
 	{
 		return -1;
@@ -200,7 +237,7 @@ int main(int argc, char* argv[])
 	}
 	// END
 
-	Projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
+	Projection = glm::perspective(45.0f, xsize / ysize, 0.1f, 100.0f);
 	View = glm::lookAt(glm::vec3(0, 0, 2),
 				 				 glm::vec3(0, 0, 0),
 								 glm::vec3(0, 1, 0));
@@ -220,6 +257,7 @@ int main(int argc, char* argv[])
 
 	// END
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetMouseButtonCallback(window, mouse_button_callback);
 
 	init_model();
 
