@@ -41,7 +41,8 @@ double after = 0.0;
 
 double xpos, ypos; //cursor position
 float xsize = 1024.0f; //window size
-float ysize = 786.0f;
+float ysize = 768.0f;
+float aspect = xsize / ysize;
 
 int i; //for iteration
 
@@ -131,7 +132,7 @@ void init_model(void)
 	koch_line(g_vertex_buffer_data[1], g_vertex_buffer_data[2], 5);
 	koch_line(g_vertex_buffer_data[2], g_vertex_buffer_data[0], 5);
 
-	printf("VBO_SIZE:%zd ", g_vertex_buffer_data.size());
+	printf("VBO_SIZE:%zd\n ", g_vertex_buffer_data.size());
 
 	// Generates Vertex Array Objects in the GPU¡¯s memory and passes back their identifiers
 	// Create a vertex array object that represents vertex attributes stored in a vertex buffer object.
@@ -175,6 +176,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	glViewport(0, 0, width, height);
 	xsize = (float)width;
 	ysize = (float)height;
+	aspect = xsize / ysize;
 	printf("width:%f height:%f\n", xsize, ysize);
 }
 
@@ -197,8 +199,8 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 		printf("X:%f Y:%f\n", xpos, ypos);
 
-		snowflake.push_back(glm::translate(glm::mat4(1.0f), glm::vec3((float)xpos, (float)ypos, 0.0f)));
-		iYposition.push_back((float)ypos);
+		snowflake.push_back(glm::translate(glm::mat4(1.0f), glm::vec3((float)xpos, (float)ypos / 2.5, 0.0f)));
+		iYposition.push_back((float)ypos / 2.5);
 		iDegree.push_back(0.0f);
 		printf("inserted %zd\n", snowflake.size());
 	}
@@ -237,7 +239,8 @@ int main(int argc, char* argv[])
 	}
 	// END
 
-	Projection = glm::perspective(45.0f, xsize / ysize, 0.1f, 100.0f);
+	Projection = glm::ortho(-1.0f, 1.0f, -1.0f / aspect, 1.0f / aspect, 0.1f, 100.0f);
+	//Projection = glm::perspective(45.0f, aspect, -1.0f, 1.0f);
 	View = glm::lookAt(glm::vec3(0, 0, 2),
 				 				 glm::vec3(0, 0, 0),
 								 glm::vec3(0, 1, 0));
