@@ -27,8 +27,15 @@ int windowWidth, windowHeight;
 GLuint programID;
 GLuint VAID;
 GLuint VBID;
+GLuint CBID;
+GLuint BG_VAID;
+GLuint BG_VBID;
+GLuint BG_CBID;
 
 std::vector<glm::vec3> g_vertex_buffer_data;
+std::vector<glm::vec3> g_color_buffer_data;
+std::vector<glm::vec3> bgm_vertex_buffer_data;
+std::vector<glm::vec3> bgm_color_buffer_data;
 std::vector<glm::mat4> snowflake;
 std::vector<float> iYposition;
 std::vector<float> iDegree;
@@ -123,7 +130,11 @@ void koch_line(glm::vec3 a, glm::vec3 b, int iter)
 void init_model(void)
 {
 	snowflake = std::vector<glm::mat4>();
+	iYposition = std::vector<float>();
+	iDegree = std::vector<float>();
 	g_vertex_buffer_data = std::vector<glm::vec3>();
+	g_color_buffer_data = std::vector<glm::vec3>();
+
 	g_vertex_buffer_data.push_back(glm::vec3(-0.5f, -0.25f, 0.0f));
 	g_vertex_buffer_data.push_back(glm::vec3(0.0f, sqrt(0.75) - 0.25f, 0.0f));
 	g_vertex_buffer_data.push_back(glm::vec3(0.5f, -0.25f, 0.0f));
@@ -131,6 +142,9 @@ void init_model(void)
 	koch_line(g_vertex_buffer_data[0], g_vertex_buffer_data[1], 5);
 	koch_line(g_vertex_buffer_data[1], g_vertex_buffer_data[2], 5);
 	koch_line(g_vertex_buffer_data[2], g_vertex_buffer_data[0], 5);
+
+	for (i = 0; i < g_vertex_buffer_data.size(); i++)
+		g_color_buffer_data.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
 
 	printf("VBO_SIZE:%zd\n ", g_vertex_buffer_data.size());
 
@@ -141,8 +155,41 @@ void init_model(void)
 	// Create and initialize a buffer object, Generates our buffers in the GPU¡¯s memory
 	glGenBuffers(1, &VBID);
 	glBindBuffer(GL_ARRAY_BUFFER, VBID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*g_vertex_buffer_data.size(),
-	&g_vertex_buffer_data[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*g_vertex_buffer_data.size(), &g_vertex_buffer_data[0], GL_STATIC_DRAW);
+
+	glGenBuffers(1, &CBID);
+	glBindBuffer(GL_ARRAY_BUFFER, CBID);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*g_color_buffer_data.size(), &g_color_buffer_data[0], GL_STATIC_DRAW);
+}
+
+void init_bg()
+{
+	bgm_vertex_buffer_data = std::vector<glm::vec3>();
+	bgm_color_buffer_data = std::vector<glm::vec3>();
+
+	bgm_vertex_buffer_data.push_back(glm::vec3(-0.2f, 0.1f, -0.1f));
+	bgm_vertex_buffer_data.push_back(glm::vec3(0.6f, 0.6f, -0.1f));
+	bgm_vertex_buffer_data.push_back(glm::vec3(1.0f, 0.2f, -0.1f));
+
+	bgm_vertex_buffer_data.push_back(glm::vec3(1.0f, -1.0f, -0.1f));
+	bgm_vertex_buffer_data.push_back(glm::vec3(-1.0f, -1.0f, -0.1f));
+
+	bgm_vertex_buffer_data.push_back(glm::vec3(-1.0f, 0.0f, -0.1f));
+	bgm_vertex_buffer_data.push_back(glm::vec3(-0.6f, 0.4f, -0.1f));
+
+	for (i = 0; i < bgm_vertex_buffer_data.size(); i ++)
+		bgm_color_buffer_data.push_back(glm::vec3(0.0f, 0.2f, 0.0f));
+	
+	glGenVertexArrays(1, &BG_VAID);
+	glBindVertexArray(BG_VAID);
+	glGenBuffers(1, &BG_VBID);
+	glBindBuffer(GL_ARRAY_BUFFER, BG_VBID);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*bgm_vertex_buffer_data.size(), &bgm_vertex_buffer_data[0], GL_STATIC_DRAW);
+
+	//color buffering
+	glGenBuffers(1, &BG_CBID);
+	glBindBuffer(GL_ARRAY_BUFFER, BG_CBID);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*bgm_color_buffer_data.size(), &bgm_color_buffer_data[0], GL_STATIC_DRAW);
 }
 
 // TODO: Draw model
@@ -156,6 +203,11 @@ void draw_model()
 		glBindBuffer(GL_ARRAY_BUFFER, VBID);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), BUFFER_OFFSET(0));
 
+		//since fragment shader is modified, add color buffering
+		glEnableVertexAttribArray(1);
+		glBindBuffer(GL_ARRAY_BUFFER, CBID);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), BUFFER_OFFSET(0));
+
 		glm::mat4 Rotation = glm::rotate(iDegree[i], glm::vec3(0, 0, 1));
 		glm::mat4 Translation = snowflake[i] * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, iYposition[i], 0.0f));
 		glm::mat4 Scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 0.0f));
@@ -164,11 +216,47 @@ void draw_model()
 		iDegree[i] += 1.0f;
 		iYposition[i] -= 0.005f;
 
+		//When elements in vectors are removed too early, flickering occurs. 
+		if (iYposition[i] < -2.5f)
+		{
+			//std::swap(snowflake[i], snowflake.back());
+			//snowflake.pop_back();
+			//std::swap(iYposition[i], iYposition.back());
+			//iYposition.pop_back();
+			//std::swap(iDegree[i], iDegree.back());
+			//iDegree.pop_back();
+			snowflake.erase(snowflake.begin());
+			iYposition.erase(iYposition.begin());
+			iDegree.erase(iDegree.begin());
+		}
+
 		GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
 		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)g_vertex_buffer_data.size()); //just to avoid warning message...
 		glDisableVertexAttribArray(0);
 	}
+}
+
+void draw_bg()
+{
+	glUseProgram(programID);
+	glBindVertexArray(BG_VAID);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, BG_VBID);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), BUFFER_OFFSET(0));
+
+	//0 for vertices, 1 for coloring
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, BG_CBID);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), BUFFER_OFFSET(0));
+
+	glm::mat4 Scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 0.0f));
+	glm::mat4 MVP = Projection * View * Scale;
+
+	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
+	glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, (GLsizei)bgm_vertex_buffer_data.size());
+	glDisableVertexAttribArray(0);
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -199,8 +287,8 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 		printf("X:%f Y:%f\n", xpos, ypos);
 
-		snowflake.push_back(glm::translate(glm::mat4(1.0f), glm::vec3((float)xpos, (float)ypos / 2.5, 0.0f)));
-		iYposition.push_back((float)ypos / 2.5);
+		snowflake.push_back(glm::translate(glm::mat4(1.0f), glm::vec3((float)xpos, (float)ypos / 2.5f, 0.0f)));
+		iYposition.push_back((float)ypos / 2.5f);
 		iDegree.push_back(0.0f);
 		printf("inserted %zd\n", snowflake.size());
 	}
@@ -239,6 +327,7 @@ int main(int argc, char* argv[])
 	}
 	// END
 
+	//changed to orthographic projection, but still doesn't fit the scale
 	Projection = glm::ortho(-1.0f, 1.0f, -1.0f / aspect, 1.0f / aspect, 0.1f, 100.0f);
 	//Projection = glm::perspective(45.0f, aspect, -1.0f, 1.0f);
 	View = glm::lookAt(glm::vec3(0, 0, 2),
@@ -249,7 +338,7 @@ int main(int argc, char* argv[])
 
 	// TODO: Initialize OpenGL and GLSL
 
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClearColor(0.0f, 0.0f, 0.15f, 0.0f);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	int width, height;
@@ -263,6 +352,7 @@ int main(int argc, char* argv[])
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
 
 	init_model();
+	init_bg();
 
 	// Step 2: Main event loop
 	do {
@@ -270,6 +360,7 @@ int main(int argc, char* argv[])
 
 		before = glfwGetTime();
 		draw_model();
+		draw_bg();
 		after = glfwGetTime();
 		while ((before - after) > (1.0 / 60.0))
 		{
@@ -282,10 +373,17 @@ int main(int argc, char* argv[])
 
 	// Step 3: Termination
 	g_vertex_buffer_data.clear();
+	g_color_buffer_data.clear();
+	bgm_vertex_buffer_data.clear();
+	bgm_color_buffer_data.clear();
 
 	glDeleteBuffers(1, &VBID);
+	glDeleteBuffers(1, &CBID);
+	glDeleteBuffers(1, &BG_VBID);
+	glDeleteBuffers(1, &BG_CBID);
 	glDeleteProgram(programID);
 	glDeleteVertexArrays(1, &VAID);
+	glDeleteVertexArrays(1, &BG_VAID);
 
 	glfwTerminate();
 
