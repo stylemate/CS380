@@ -8,7 +8,8 @@
 
 glm::mat4 linearFact(glm::mat4 A)
 {
-
+	glm::mat4 L = glm::mat4(1.0f);
+	return L;
 }
 
 //since glm is column-major ordered, 4th column's first three elements are composing transformation matrix
