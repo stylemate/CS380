@@ -90,6 +90,7 @@ add_executable(Lab2
 	common/shader.hpp
   	common/model.cpp
   	common/model.hpp
+	common/affine.h
 
 	Lab2/VertexShader.glsl
 	Lab2/FragmentShader.glsl
