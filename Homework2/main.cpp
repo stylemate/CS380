@@ -35,6 +35,9 @@ int frameBufferWidth = 0;
 int frameBufferHeight = 0;
 float fov = 45.0f;
 float fovy = fov;
+int current_frame = 0;
+int current_object = 0;
+int number_of_frames = 3;
 
 // Model properties
 Model ground, redCube, greenCube;
@@ -103,6 +106,8 @@ static void keyboard_callback(GLFWwindow* window, int key, int scancode, int act
 {
 	if (action == GLFW_PRESS)
 	{
+		glm::mat4 m = glm::mat4(1.0f);
+
 		switch (key)
 		{
 		case GLFW_KEY_H:
@@ -116,15 +121,36 @@ static void keyboard_callback(GLFWwindow* window, int key, int scancode, int act
 			break;
 		case GLFW_KEY_V:
 			// TODO: Change viewpoint
+			current_frame = (current_frame + 1) % number_of_frames;
+			printf("current_frame:%d\n", current_frame);
 			break;
 		case GLFW_KEY_O:
 			// TODO: Change manipulating object
+			current_object = (current_object + 1) % number_of_frames;
+			printf("current_object:%d\n", current_object);
 			break;
 		case GLFW_KEY_M:
 			// TODO: Change auxiliary frame between world-sky and sky-sky
 			break;
 		case GLFW_KEY_C:
 			// TODO: Add an additional manipulation method
+			// moves backward or towards "me"
+			 m = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.05f));
+			break;
+		default:
+			break;
+		}
+
+		switch (current_object)
+		{
+		case 0:
+			skyRBT = skyRBT * m;
+			break;
+		case 1:
+			g_objectRbt[0] = g_objectRbt[0] * m;
+			break;
+		case 2:
+			g_objectRbt[1] = g_objectRbt[1] * m;
 			break;
 		default:
 			break;
@@ -236,6 +262,7 @@ int main(void)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// TODO: Change Viewpoint with respect to your current view index
+		eyeRBT = (current_frame == 0) ? skyRBT : (current_frame == 1) ? g_objectRbt[0] : g_objectRbt[1];
 
 		redCube.draw();
 		greenCube.draw();

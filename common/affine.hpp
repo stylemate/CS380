@@ -20,8 +20,8 @@ glm::mat4 linearFact(glm::mat4 A)
 	for (int i = 0; i < 3; i++)
 		glm::column(L, i, glm::column(A, i));
 	//The reason why 4th row is copied is because affine transformation matrix's very last element would be "1"
-	//Since column is occupied... therefore, row
-	glm::row(L, 3, glm::column(A, 3));
+	//Since column is occupied for translation... therefore, row
+	glm::row(L, 3, glm::row(A, 3));
 
 	return L;
 }
